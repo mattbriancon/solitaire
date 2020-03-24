@@ -1,0 +1,56 @@
+<html>
+  <head>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/react@16/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@16/umd/react-dom.production.min.js"></script>
+    <script src="game.jsx" type="text/jsx" crossorigin></script>
+
+    <style>
+      :root {
+        --card-width: 50px;
+        --card-ratio: calc(3.5 / 2.5);
+      }
+
+      body, html {
+        background: green;
+        padding: 0;
+        margin: 0;
+      }
+
+      .rows {
+        padding: 10px;
+        display: grid;
+        grid-gap: 5px;
+        max-width: 720px;
+        margin: 0 auto;
+      }
+
+      .card {
+        background: white;
+        border-radius: 12px;
+        font-family: monospace;
+        font-size: 24px;
+        line-height: 1;
+        width: var(--card-width);
+        height: calc(var(--card-width) * var(--card-ratio));
+        display: flex;
+        text-align: center;
+        justify-content: center;
+        align-items: center;
+        user-select: none;
+      }
+
+      .card.blank { color: lightslategrey; background: lightslategrey; }
+      .card.red   { color: red; }
+      .card.black { color: black; }
+
+      .controls {
+
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="container"></div>
+  </body>
+</html>
