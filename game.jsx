@@ -211,8 +211,8 @@ class Game {
       if (blank.column === 0) {
         for (const two of Deck.getCardsByRank("2")) movable.add(two);
       } else {
-        const cardToLeft = this.rows[blank.row][blank.column - 1];
-        if (!cardToLeft.isBlank() && cardToLeft.rank !== "K") {
+        const cardToLeft = this.cardToLeft(blank);
+        if (cardToLeft && !cardToLeft.isBlank() && cardToLeft.rank !== "K") {
           movable.add(Deck.nextHighestSuitedCard(cardToLeft));
         }
       }
