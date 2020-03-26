@@ -1,0 +1,14 @@
+---
+env:
+  browser: true
+  es2020: true
+globals:
+  React: readonly
+  ReactDOM: readonly
+parser: /usr/local/lib/node_modules/babel-eslint
+parserOptions:
+  ecmaVersion: 2020
+  sourceType: script
+  ecmaFeatures:
+    jsx: true
+extends: eslint:recommended
