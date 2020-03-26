@@ -3,7 +3,7 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://unpkg.com/react@16/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@16/umd/react-dom.production.min.js"></script>
-    <script src="game.jsx" type="text/jsx" crossorigin></script>
+    <script src="game.jsx" type="text/jsx" data-presets="env,react,stage-3" crossorigin></script>
 
     <style>
       :root {
@@ -43,6 +43,10 @@
       .card.blank { color: lightslategrey; background: lightslategrey; }
       .card.red   { color: red; }
       .card.black { color: black; }
+
+      .card.movable {
+        box-shadow: 0 0 10px 0 black;
+      }
 
       .controls {
 
