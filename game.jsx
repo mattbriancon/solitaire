@@ -27,7 +27,7 @@ function extend(arr1, arr2) {
 }
 
 class Card {
-  static RANKS = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"];
+  static RANKS = ["2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
   static SUITS = new Map([
     ["C", { symbol: "\u2663", color: "black" }],
     ["D", { symbol: "\u2666", color: "red" }],
@@ -42,6 +42,7 @@ class Card {
   constructor(rank, suit) {
     this.rank = rank;
     this.suit = suit;
+    this.nextRank = this.prevRank = null;
     this.row = this.column = null;
   }
 
@@ -60,20 +61,7 @@ class Card {
   }
 
   isBlank() {
-    return this.rank === "B";
-  }
-
-  makeBlank() {
-    if (this.isBlank()) return;
-    if (this.rank !== "A") {
-      throw new Error(`Only aces can be made blank: ${this.key}`);
-    }
-    this.rank = "B";
-  }
-
-  makeAce() {
-    if (!this.isBlank()) return;
-    this.rank = "A";
+    return this.suit === "B";
   }
 }
 
@@ -84,24 +72,33 @@ class Deck {
         return new Card(rank, suit);
       }),
     )
-    .flat();
+    .flat()
+    .concat([
+      // add blanks
+      new Card("B1", "B"),
+      new Card("B2", "B"),
+      new Card("B3", "B"),
+      new Card("B4", "B"),
+    ]);
 
   static CARDS_BY_KEY = new Map(Deck.CARDS.map((card) => [card.key, card]));
 
+  static _ = Deck.CARDS.forEach((card) => {
+    const rankIndex = Card.RANKS.indexOf(card.rank);
+    const prevRank = Card.RANKS[rankIndex - 1];
+    const nextRank = Card.RANKS[rankIndex + 1];
+
+    if (prevRank) {
+      card.prevRank = Deck.CARDS_BY_KEY.get(Card.makeKey(prevRank, card.suit));
+    }
+
+    if (nextRank) {
+      card.nextRank = Deck.CARDS_BY_KEY.get(Card.makeKey(nextRank, card.suit));
+    }
+  });
+
   static all() {
     return Deck.CARDS.slice();
-  }
-
-  static nextLowestSuitedCard(card) {
-    const rankIndex = Card.RANKS.indexOf(card.rank);
-    const nextRank = Card.RANKS[rankIndex - 1];
-    return Deck.CARDS_BY_KEY.get(Card.makeKey(nextRank, card.suit));
-  }
-
-  static nextHighestSuitedCard(card) {
-    const rankIndex = Card.RANKS.indexOf(card.rank);
-    const nextRank = Card.RANKS[rankIndex + 1];
-    return Deck.CARDS_BY_KEY.get(Card.makeKey(nextRank, card.suit));
   }
 
   static getCardsByRank(rank) {
@@ -111,17 +108,12 @@ class Deck {
   static getBlanks() {
     return Deck.CARDS.filter((card) => card.isBlank());
   }
-
-  static removeAces() {
-    for (const ace of Deck.getCardsByRank("A")) ace.makeBlank();
-  }
-
-  static addAces() {
-    for (const blank of Deck.getBlanks()) blank.makeAce();
-  }
 }
 
 class Game {
+  // TODO when i start using localstorage, will need to serialize to the card's KEY
+  // and rehydrate after the cards have been recreated
+
   constructor(stock, rows, meta) {
     this.stock = stock || Deck.all();
     this.rows = rows || [[], [], [], []];
@@ -137,10 +129,6 @@ class Game {
     return this.rows;
   }
 
-  needsDeal() {
-    return this.stock.length !== 0;
-  }
-
   cardToLeft(card) {
     return this.rows[card.row][card.column - 1];
   }
@@ -151,27 +139,18 @@ class Game {
 
   clearUnfinished() {
     const self = this._clone();
+    const finalizedCards = self.getFinalizedCards();
 
     for (const [rowIndex, row] of enumerate(self.rows)) {
-      if (row.length === 0) continue;
-      let lastGoodCard = row[0];
-
-      // if the first card isn't a 2, add everything to the stock, kill the row, and move on
-      if (lastGoodCard.rank !== "2") {
-        extend(self.stock, row);
-        self.rows[rowIndex] = [];
-        continue;
+      for (const [colIndex, card] of enumerate(row)) {
+        if (!finalizedCards.has(card)) {
+          extend(self.stock, row.slice(colIndex));
+          self.rows[rowIndex] = row.slice(0, colIndex);
+          break;
+        }
       }
-
-      while (self.cardToRight(lastGoodCard) === Deck.nextHighestSuitedCard(lastGoodCard)) {
-        lastGoodCard = Deck.nextHighestSuitedCard(lastGoodCard);
-      }
-
-      extend(self.stock, row.slice(lastGoodCard.column + 1));
-      self.rows[rowIndex] = row.slice(0, lastGoodCard.column + 1);
     }
 
-    Deck.addAces();
     for (const card of self.stock) {
       card.row = card.column = null;
     }
@@ -194,7 +173,6 @@ class Game {
       }
     }
 
-    Deck.removeAces();
     self.meta.deals++;
 
     return self;
@@ -213,12 +191,39 @@ class Game {
       } else {
         const cardToLeft = this.cardToLeft(blank);
         if (cardToLeft && !cardToLeft.isBlank() && cardToLeft.rank !== "K") {
-          movable.add(Deck.nextHighestSuitedCard(cardToLeft));
+          movable.add(cardToLeft.nextRank);
         }
       }
     }
 
     return movable;
+  }
+
+  getFinalizedCards() {
+    const finalized = new Set();
+
+    for (const row of this.rows) {
+      if (row.length === 0) continue;
+
+      let lastGoodCard = row[0];
+
+      // if the first card isn't a 2, skip the whole row
+      if (lastGoodCard.rank !== "2") {
+        continue;
+      }
+
+      finalized.add(lastGoodCard);
+
+      let next = lastGoodCard.nextRank;
+
+      while (next && next === this.cardToRight(lastGoodCard)) {
+        finalized.add(next);
+        lastGoodCard = next;
+        next = lastGoodCard.nextRank;
+      }
+    }
+
+    return finalized;
   }
 
   _swap(card, dest) {
@@ -261,7 +266,7 @@ class Game {
         }
       }
     } else {
-      const nextLowest = Deck.nextLowestSuitedCard(card);
+      const nextLowest = card.prevRank;
 
       // make sure we're not at the far right of the board
       if (nextLowest.column < self.rows[nextLowest.row].length - 1) {
@@ -284,13 +289,17 @@ class Game {
   }
 }
 
-function CardComponent({ card, moveCard }) {
+function CardComponent({ card, moveCard, isFinalized }) {
   const classes = ["card"];
 
-  if (!card.isBlank()) {
-    classes.push(card.color);
-  } else {
+  if (isFinalized) {
+    classes.push("finalized");
+  }
+
+  if (card.isBlank()) {
     classes.push("blank");
+  } else {
+    classes.push(card.color);
   }
 
   let onClick = null;
@@ -300,11 +309,7 @@ function CardComponent({ card, moveCard }) {
   }
 
   return (
-    <div
-      className={classes.join(" ")}
-      style={{ gridColumn: card.column + 1, gridRow: card.row + 1 }}
-      onClick={onClick}
-    >
+    <div className={classes.join(" ")} onClick={onClick}>
       <div className="card-corner">
         <div className="card-rank">{card.rank}</div>
         <div>{card.symbol}</div>
@@ -316,36 +321,45 @@ function CardComponent({ card, moveCard }) {
 function Board() {
   const [game, setGame] = React.useState(new Game());
   const movableCards = game.getMovableCards();
+  const finalizedCards = game.getFinalizedCards();
 
   const moveCard = (card) => {
-    console.log(`Try to move ${card.key}`);
+    console.log(`Move ${card.key}`);
     setGame(game.move(card));
   };
 
   return (
     <div className="board">
       <div className="controls">
-        <button onClick={() => setGame(new Game().deal())}>New Game</button>|||||||||
+        <button onClick={() => setGame(new Game().deal())}>New Game</button>
+        <span>Deals: {game.meta.deals}</span> | <span>Available moves: {movableCards.size}</span>
         <button onClick={() => setGame(game.deal())} disabled={movableCards.size > 0}>
           Deal
         </button>
-        <button onClick={() => setGame(game.clearUnfinished())}>Clear unset</button>
-        <span>Deals: {game.meta.deals}</span> | <span>Possible moves: {movableCards.size}</span>
       </div>
 
       <div className="rows">
-        {game
-          .getRows()
-          .map((row) =>
-            row.map((card) => (
-              <CardComponent
-                card={card}
-                key={card.key}
-                moveCard={movableCards.has(card) ? moveCard : null}
-              />
-            )),
-          )
-          .flat()}
+        {game.getRows().map((row) => {
+          return (
+            <div className="row">
+              {row.map((card) => (
+                <CardComponent
+                  card={card}
+                  key={card.key}
+                  moveCard={movableCards.has(card) ? moveCard : null}
+                  isFinalized={finalizedCards.has(card)}
+                />
+              ))}
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="controls">
+        <button onClick={() => setGame(game.clearUnfinished())}>Clear unset</button>
+        <button onClick={() => setGame(game.move(shuffled(Array.from(movableCards))[0]))} disabled={movableCards.size === 0}>
+          Random Move
+        </button>
       </div>
     </div>
   );

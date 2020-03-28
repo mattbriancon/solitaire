@@ -1,14 +1,17 @@
 <html>
   <head>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://unpkg.com/react@16/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@16/umd/react-dom.production.min.js"></script>
-    <script src="game.jsx" type="text/jsx" data-presets="env,react,stage-3" crossorigin></script>
+    <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react@16/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@16/umd/react-dom.production.min.js"></script>
+    <script crossorigin src="game.jsx" type="text/jsx" data-presets="env,react,stage-3"></script>
 
     <style>
       :root {
-        --card-width: 50px;
         --card-ratio: calc(3.5 / 2.5);
+        --card-width: 50px;
+        --card-height: calc(var(--card-width) * var(--card-ratio));
+        --card-margin: 2px;
+        --row-height: calc(var(--card-height) + var(--card-margin) * 2);
       }
 
       body, html {
@@ -17,22 +20,30 @@
         margin: 0;
       }
 
-      .rows {
-        padding: 10px;
-        display: grid;
-        grid-gap: 5px;
+      .board {
         max-width: 720px;
         margin: 0 auto;
       }
 
+      .rows {
+      }
+
+      .row {
+        width: 100%;
+        overflow: hidden;
+        height: var(--row-height);
+      }
+
       .card {
+        float: left;
+        margin: var(--card-margin);
         background: white;
         border-radius: 12px;
         font-family: monospace;
         font-size: 24px;
         line-height: 1;
         width: var(--card-width);
-        height: calc(var(--card-width) * var(--card-ratio));
+        height: var(--card-height);
         display: flex;
         text-align: center;
         justify-content: center;
@@ -40,12 +51,12 @@
         user-select: none;
       }
 
+      .card.finalized { opacity: 50%; }
       .card.blank { color: lightslategrey; background: lightslategrey; }
       .card.red   { color: red; }
       .card.black { color: black; }
 
       .card.movable {
-        box-shadow: 0 0 10px 0 black;
       }
 
       .controls {
