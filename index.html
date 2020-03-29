@@ -2,7 +2,11 @@
   <head>
     <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script crossorigin src="https://unpkg.com/react@16/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@16/umd/react-dom.production.min.js"></script>
+    <script
+      crossorigin
+      src="https://unpkg.com/react-dom@16/umd/react-dom.production.min.js"
+    ></script>
+
     <script crossorigin src="game.jsx" type="text/jsx" data-presets="env,react,stage-3"></script>
 
     <style>
@@ -12,20 +16,46 @@
         --card-height: calc(var(--card-width) * var(--card-ratio));
         --card-margin: 2px;
         --row-height: calc(var(--card-height) + var(--card-margin) * 2);
+        --layout-margin: 25px;
       }
 
-      body, html {
+      * {
+        box-sizing: border-box;
+        font-family: monospace;
+      }
+
+      body,
+      html {
         background: green;
         padding: 0;
         margin: 0;
+        background: radial-gradient(circle, rgba(9, 115, 9, 1) 4%, rgba(9, 66, 9, 1) 96%);
       }
 
       .board {
-        max-width: 720px;
+        max-width: 702px;
         margin: 0 auto;
       }
 
+      header {
+        text-align: center;
+        margin-top: var(--layout-margin);
+        color: white;
+      }
+
+      header .links a,
+      header .links a:visited {
+        margin: 0 10px;
+        color: white;
+        text-decoration: none;
+      }
+
+      header .links a:hover {
+        text-decoration: underline;
+      }
+
       .rows {
+        margin-top: var(--layout-margin);
       }
 
       .row {
@@ -39,8 +69,6 @@
         margin: var(--card-margin);
         background: white;
         border-radius: 12px;
-        font-family: monospace;
-        font-size: 24px;
         line-height: 1;
         width: var(--card-width);
         height: var(--card-height);
@@ -51,16 +79,90 @@
         user-select: none;
       }
 
-      .card.finalized { opacity: 50%; }
-      .card.blank { color: lightslategrey; background: lightslategrey; }
-      .card.red   { color: red; }
-      .card.black { color: black; }
+      .card .symbol {
+        font-size: 36px;
+      }
+
+      .card .rank {
+        font-size: 24px;
+      }
+
+      .card.finalized {
+        opacity: 50%;
+      }
+      .card.blank {
+        background: rgba(0, 0, 0, 0);
+        border: 2px solid white;
+      }
+
+      .card.blank .rank,
+      .card.blank .symbol {
+        display: none;
+      }
+
+      .card.red {
+        color: red;
+      }
+      .card.black {
+        color: black;
+      }
 
       .card.movable {
+        cursor: pointer;
+        background: #fdec5a;
+      }
+
+      .scoreboard {
+        font-size: 18px;
+        color: white;
+        display: flex;
+        margin-top: var(--layout-margin);
+      }
+
+      .score {
+        text-align: center;
+        flex: 1;
+      }
+
+      .score .title {
+        display: block;
       }
 
       .controls {
+        text-align: center;
+      }
 
+      .controls button {
+        background: white;
+        color: black;
+        font-size: 14px;
+        border-radius: 7px;
+        padding: 4px 15px;
+        margin: 5px 3px;
+        cursor: pointer;
+        border: none;
+        margin-top: var(--layout-margin);
+      }
+
+      .controls button:focus {
+        outline: none;
+      }
+
+      .controls button:hover {
+        text-decoration: underline;
+      }
+
+      .controls button:hover {
+        text-decoration: underline;
+      }
+
+      .controls button:disabled {
+        opacity: 50%;
+      }
+
+      .controls button:active {
+        color: white;
+        background: black;
       }
     </style>
   </head>

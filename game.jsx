@@ -42,8 +42,10 @@ class Card {
   constructor(rank, suit) {
     this.rank = rank;
     this.suit = suit;
-    this.nextRank = this.prevRank = null;
     this.row = this.column = null;
+
+    this.nextRank = this.prevRank = null;
+    this.left = this.right = null;
   }
 
   get symbol() {
@@ -117,7 +119,7 @@ class Game {
   constructor(stock, rows, meta) {
     this.stock = stock || Deck.all();
     this.rows = rows || [[], [], [], []];
-    this.meta = meta || { deals: 0 };
+    this.meta = meta || { deals: 0, moves: 0 };
   }
 
   _clone() {
@@ -234,6 +236,8 @@ class Game {
     // then move the cards in the rows
     this.rows[card.row][card.column] = card;
     this.rows[dest.row][dest.column] = dest;
+
+    this.meta.moves++;
   }
 
   move(card) {
@@ -311,8 +315,8 @@ function CardComponent({ card, moveCard, isFinalized }) {
   return (
     <div className={classes.join(" ")} onClick={onClick}>
       <div className="card-corner">
-        <div className="card-rank">{card.rank}</div>
-        <div>{card.symbol}</div>
+        <div className="rank">{card.rank}</div>
+        <div className="symbol">{card.symbol}</div>
       </div>
     </div>
   );
@@ -330,13 +334,13 @@ function Board() {
 
   return (
     <div className="board">
-      <div className="controls">
-        <button onClick={() => setGame(new Game().deal())}>New Game</button>
-        <span>Deals: {game.meta.deals}</span> | <span>Available moves: {movableCards.size}</span>
-        <button onClick={() => setGame(game.deal())} disabled={movableCards.size > 0}>
-          Deal
-        </button>
-      </div>
+      <header>
+        <h1>Gaps (variant) Solitaire</h1>
+        <div className="links">
+          <a href="">Rules</a>
+          <a target="_blank" href="https://en.wikipedia.org/wiki/Gaps">About</a>
+        </div>
+      </header>
 
       <div className="rows">
         {game.getRows().map((row) => {
@@ -355,11 +359,37 @@ function Board() {
         })}
       </div>
 
+      <div className="scoreboard">
+        <div className="score">
+          <span className="title">Deals:</span>
+          <span className="value">{game.meta.deals}</span>
+        </div>
+        <div className="score">
+          <span className="title">Total Moves:</span>
+          <span className="value">{game.meta.moves}</span>
+        </div>
+        <div className="score">
+          <span className="title">Available Moves:</span>
+          <span className="value">{movableCards.size}</span>
+        </div>
+
+      </div>
+
       <div className="controls">
-        <button onClick={() => setGame(game.clearUnfinished())}>Clear unset</button>
-        <button onClick={() => setGame(game.move(shuffled(Array.from(movableCards))[0]))} disabled={movableCards.size === 0}>
-          Random Move
+        <button onClick={() => setGame(game.deal())} disabled={movableCards.size > 0}>
+          Deal
         </button>
+        <button onClick={() => setGame(game.undo())}>Undo</button>
+
+        <div className="debug">
+          <button onClick={() => setGame(game.clearUnfinished())}>Clear unset</button>
+          <button
+            onClick={() => setGame(game.move(shuffled(Array.from(movableCards))[0]))}
+            disabled={movableCards.size === 0}
+          >
+            Random Move
+          </button>
+        </div>
       </div>
     </div>
   );
